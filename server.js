@@ -9,13 +9,13 @@ const routes = require('./routes/handlers');
 
 
 // Sending static files with Express 
-app.use(express.static('public'));
+app.use(express.static('images'));
 
 
 const hbs = expbs.create({
     defaultLayout: 'main',
     layoutsDir: path.join(__dirname, 'views/mainLayout'), // change layout folder name
-    partialsDir: path.join(__dirname, 'views/pieces'), // change partials folder name
+
 
     // create custom express handlebars helpers
     helpers: {

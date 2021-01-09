@@ -86,8 +86,19 @@ router.get('/livres', async(req, res) => {
     connection = await oracledb.getConnection(dbConfig);
     let sql = `SELECT * from livre`;
     const result = await connection.execute(sql);
-
-    res.send(result.rows)
+    let listLivres = []
+    result.rows.forEach(element => {
+        let livre = {
+            titre:element[1],
+            auteur:element[2],
+            imagename:element[3].SOURCE.SRCNAME
+        }
+        listLivres.push(livre)
+    });
+    console.log(listLivres)
+    res.render('index', {
+        livres: listLivres
+    });
 });
 
 router.post('/livres', upload.single('image'), async(req, res) => {
@@ -101,45 +112,7 @@ router.post('/livres', upload.single('image'), async(req, res) => {
     let auteur = req.body.auteur; //nom auteur
     let image = req.file; //nom image
     console.log(id,titre,auteur,image.originalname)
-    // const sql= 
-    //       [` set serveroutput on;
-
-    //       DECLARE
-    //           img ORDImage;
-    //           ctx RAW(64) := NULL;
-    //           BEGIN
-    //           INSERT
-    //           INTO livre(id,titre,auteur,image)
-    //           VALUES (:id,:titre,:auteur,ORDImage.init(:typee,:dira,:image)) 
-    //           returning image
-    //               INTO img;
-    //           img.import(ctx);
-    //               UPDATE livre SET image = img 
-    //               WHERE id =:id;
-    //               COMMIT;
-    //               END;
-    //           /`];
-            //   const options = {
-            //     autoCommit: true,
-            //     bindDefs: {
-            //       id: { dir:oracledb.BIND_IN,type: oracledb.NUMBER },
-            //       titre: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
-            //       auteur: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
-            //       typee: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
-            //      image: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
-            //      dira: {dir:oracledb.BIND_IN, type: oracledb.STRING }
-            //     }
-            //   };
-              
-            //  const binds = [
-            //     {id:id,
-            //     titre:titre,
-            //     auteur:auteur,
-            //     typee:"FILE",
-            //     dira:'DIR_MMDB_UAS',
-            //     image:image.originalname}]
-            //    result = await connection.execute(sql[0],binds
-            //   , options)
+    
             result = await connection.execute(
                 `BEGIN
                    add_livre(:id,:titre,:auteur,:image);
@@ -151,6 +124,7 @@ router.post('/livres', upload.single('image'), async(req, res) => {
                   image:  { type: oracledb.STRING, dir: oracledb.BIND_IN ,val:image.originalname}
                 }
               );
+              res.send('ajout avec succes')
 
 });
 
