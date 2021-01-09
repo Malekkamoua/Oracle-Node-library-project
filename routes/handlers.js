@@ -1,6 +1,31 @@
 const express = require('express');
 const router = express.Router();
 const dbConfig = require('../dbconfig');
+const multer = require('multer')
+const path = require('path');
+
+//Uploading cv
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'images');
+    },
+    filename: (req, file, cb) => {
+        console.log(file);
+        cb(null, Date.now() + path.extname(file.originalname));
+    }
+});
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype == 'image/jpeg') {
+        cb(null, true);
+    } else {
+        cb(null, false);
+    }
+}
+
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter
+});
 
 async function run() {
 
@@ -64,7 +89,7 @@ router.get('/livres', (req, res) => {
     console.log(result.rows)
 });
 
-router.post('/livres', (req, res) => {
+router.post('/livres', upload.single('image'), (req, res) => {
 
     let sql_1 = `SELECT * from livre`;
     const result = await connection.execute(sql_1);
@@ -72,7 +97,7 @@ router.post('/livres', (req, res) => {
     let id = result.rows.length + 1;
     let titre = req.body.titre; //tittre du livre
     let auteur = req.body.auteur; //nom auteur
-    let image = req.body.image.SRCNAME; //nom image
+    let image = req.file.path; //nom image
 
     const sql = `set serveroutput on;
             DECLARE
@@ -82,11 +107,11 @@ router.post('/livres', (req, res) => {
             INSERT
             INTO livre(id,titre,auteur,image)
             VALUES(${id},${titre},${auteur},ORDImage.init('FILE','DIR_MMDB_UAS',${image} )) 
-            returning Foto_Musik
+            returning image
                 INTO img;
             img.import(ctx);
-                UPDATE livre SET Foto_Musik = img 
-                WHERE id = 2;
+                UPDATE livre SET image = img 
+                WHERE id = ${id};
                 COMMIT;
                 END;
             /`;
