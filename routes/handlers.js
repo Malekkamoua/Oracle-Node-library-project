@@ -3,7 +3,8 @@ const router = express.Router();
 const dbConfig = require('../dbconfig');
 const multer = require('multer')
 const path = require('path');
-
+const oracledb = require('oracledb')
+var connection;
 //Uploading cv
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -11,7 +12,7 @@ const storage = multer.diskStorage({
     },
     filename: (req, file, cb) => {
         console.log(file);
-        cb(null, Date.now() + path.extname(file.originalname));
+        cb(null, file.originalname);
     }
 });
 const fileFilter = (req, file, cb) => {
@@ -29,7 +30,7 @@ const upload = multer({
 
 async function run() {
 
-    var connection;
+    
 
     try {
         // Get a non-pooled connection
@@ -53,71 +54,103 @@ run();
 
 //create dir 
 router.get('/createdir', async (req, res) => {
-
-    let sql = `DROP DIRECTORY Musik_Tradisional ;
-    CREATE DIRECTORY DIR_MMDB_UAS
-    AS 'C:\Musik_Tradisional';
+    connection = await oracledb.getConnection(dbConfig);
+    let sql = `CREATE DIRECTORY DIR_MMDB_UAS AS 'C:\Musik_Tradisional';
     GRANT READ ON DIRECTORY DIR_MMDB_UAS TO c##skander`;
 
     await connection.execute(sql)
-
+    res.send("your dir is created!! <3")
 });
 
 //create db 
 router.get('/createdb', async (req, res) => {
-
-    let sql = `CREATE TABLE livre(
-
-        id NUMBER,
-        titre varchar2(20),
-        auteur varchar2(20),
-        image ORDImage
-
-        LOB (image.source.localData) store as (chunk 32k);
-        
-        Desc livre;`;
-
-    await connection.execute(sql)
-
+    connection = await oracledb.getConnection(dbConfig);
+    const stmts = [
+        `DROP TABLE livre`,
+  
+        `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage) LOB (image.source.localData) store as (chunk 32k)`
+      ];
+  
+      for (const s of stmts) {
+        try {
+          await connection.execute(s);
+        } catch(e) {
+          if (e.errorNum != 942)
+            console.error(e);
+        }
+      }
+res.send("data base created")
 });
 
-router.get('/livres', (req, res) => {
-
+router.get('/livres', async(req, res) => {
+    connection = await oracledb.getConnection(dbConfig);
     let sql = `SELECT * from livre`;
     const result = await connection.execute(sql);
 
-    console.log(result.rows)
+    res.send(result.rows)
 });
 
-router.post('/livres', upload.single('image'), (req, res) => {
-
+router.post('/livres', upload.single('image'), async(req, res) => {
+    connection = await oracledb.getConnection(dbConfig);
+    let result;
     let sql_1 = `SELECT * from livre`;
-    const result = await connection.execute(sql_1);
+     result = await connection.execute(sql_1);
 
     let id = result.rows.length + 1;
     let titre = req.body.titre; //tittre du livre
     let auteur = req.body.auteur; //nom auteur
-    let image = req.file.path; //nom image
+    let image = req.file; //nom image
+    console.log(id,titre,auteur,image.originalname)
+    // const sql= 
+    //       [` set serveroutput on;
 
-    const sql = `set serveroutput on;
-            DECLARE
-            img ORDImage;
-            ctx RAW(64) := NULL;
-            BEGIN
-            INSERT
-            INTO livre(id,titre,auteur,image)
-            VALUES(${id},${titre},${auteur},ORDImage.init('FILE','DIR_MMDB_UAS',${image} )) 
-            returning image
-                INTO img;
-            img.import(ctx);
-                UPDATE livre SET image = img 
-                WHERE id = ${id};
-                COMMIT;
-                END;
-            /`;
-
-    const result = await connection.execute(sql);
-    console.log(result.rows)
+    //       DECLARE
+    //           img ORDImage;
+    //           ctx RAW(64) := NULL;
+    //           BEGIN
+    //           INSERT
+    //           INTO livre(id,titre,auteur,image)
+    //           VALUES (:id,:titre,:auteur,ORDImage.init(:typee,:dira,:image)) 
+    //           returning image
+    //               INTO img;
+    //           img.import(ctx);
+    //               UPDATE livre SET image = img 
+    //               WHERE id =:id;
+    //               COMMIT;
+    //               END;
+    //           /`];
+            //   const options = {
+            //     autoCommit: true,
+            //     bindDefs: {
+            //       id: { dir:oracledb.BIND_IN,type: oracledb.NUMBER },
+            //       titre: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
+            //       auteur: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
+            //       typee: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
+            //      image: { dir:oracledb.BIND_IN,type: oracledb.STRING, maxSize: 20 },
+            //      dira: {dir:oracledb.BIND_IN, type: oracledb.STRING }
+            //     }
+            //   };
+              
+            //  const binds = [
+            //     {id:id,
+            //     titre:titre,
+            //     auteur:auteur,
+            //     typee:"FILE",
+            //     dira:'DIR_MMDB_UAS',
+            //     image:image.originalname}]
+            //    result = await connection.execute(sql[0],binds
+            //   , options)
+            result = await connection.execute(
+                `BEGIN
+                   add_livre(:id,:titre,:auteur,:image);
+                 END;`,
+                {
+                  id: { val: id, dir: oracledb.BIND_IN,type:oracledb.NUMBER },  // Bind type is determined from the data.  Default direction is BIND_IN
+                  titre: { val: titre, dir: oracledb.BIND_IN,type: oracledb.STRING },
+                  auteur:  { type: oracledb.STRING, dir: oracledb.BIND_IN,val:auteur },
+                  image:  { type: oracledb.STRING, dir: oracledb.BIND_IN ,val:image.originalname}
+                }
+              );
 
 });
 
