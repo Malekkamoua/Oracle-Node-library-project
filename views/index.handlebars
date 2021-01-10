@@ -48,6 +48,10 @@ h1 {
 }
 </style>
 <h1>Nos Livres</h1>
+<form action="/searchimage" method="post" enctype='multipart/form-data'>
+<label for="">Cherchez livre par image : <input type="file" name="afile"></label>
+<input type="submit" value="cherchez">
+</form>
 <div class="grid-container">
   {{#livres}}
   <div>

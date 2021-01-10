@@ -67,8 +67,9 @@ router.get('/createdb', async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
     const stmts = [
         `DROP TABLE livre`,
-
-        `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage) LOB (image.source.localData) store as (chunk 32k)`
+        `DROP TABLE image_user`,
+        `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
+        `CREATE TABLE image_user (id NUMBER,image ORDImage ,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`
     ];
 
     for (const s of stmts) {
@@ -142,5 +143,20 @@ router.post('/livres', upload.single('image'), async (req, res) => {
     res.send('ajout avec succes')
 
 });
+router.post("/searchimage",upload.single('afile'),async(req,res)=>{
+    connection = await oracledb.getConnection(dbConfig);
+   
+   let image = req.file; //nom image
+    
+ console.log(image.originalname)
+
+ const result = await connection.execute(
+    `BEGIN
+               load_image('${image.originalname}');
+             END;`)
+    
+console.log(result);
+
+})
 
 module.exports = router;
