@@ -150,10 +150,18 @@ router.post("/searchimage",upload.single('afile'),async(req,res)=>{
     
  console.log(image.originalname)
 
- const result = await connection.execute(
+ let result = await connection.execute(
     `BEGIN
                load_image('${image.originalname}');
              END;`)
+ result = await connection.execute(
+                `BEGIN
+                update image_user set image_sig=ORDSYS.ORDImageSignature.init()
+                where id=1;
+                         END;`)
+result = await connection.execute(
+                            ``)
+
     
 console.log(result);
 
