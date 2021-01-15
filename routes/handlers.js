@@ -66,21 +66,21 @@ router.get('/createdir', async (req, res) => {
 router.get('/createdb', async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
     const stmts = [
-        `DROP TABLE livre`,
-        `DROP TABLE image_user`,
         `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
-        `CREATE TABLE image_user (id NUMBER,image ORDImage ,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`
+        `CREATE TABLE image_user (id NUMBER,image ORDImage ,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
+        
     ];
 
     for (const s of stmts) {
         try {
             await connection.execute(s);
+            res.send("data base created")
         } catch (e) {
             if (e.errorNum != 942)
                 console.error(e);
         }
     }
-    res.send("data base created")
+
 });
 
 router.get('/livres', async (req, res) => {
@@ -143,27 +143,58 @@ router.post('/livres', upload.single('image'), async (req, res) => {
     res.send('ajout avec succes')
 
 });
-router.post("/searchimage",upload.single('afile'),async(req,res)=>{
+router.post("/searchimage", upload.single('file'), async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
-   
-   let image = req.file; //nom image
-    
- console.log(image.originalname)
 
- let result = await connection.execute(
+    let image = req.file; //nom image
+
+    console.log(image.originalname)
+
+let result = await connection.execute(
     `BEGIN
-               load_image('${image.originalname}');
-             END;`)
- result = await connection.execute(
-                `BEGIN
-                update image_user set image_sig=ORDSYS.ORDImageSignature.init()
-                where id=1;
-                         END;`)
-result = await connection.execute(
-                            ``)
-
+               load_image(:image);
+               
+             END;`,
+             {
+                 image: {
+                val: image.originalname,
+                dir: oracledb.BIND_IN,
+                type: oracledb.STRING
+            }
+             })
+//    result = await connection.execute(
+//     `BEGIN
+//                check_sim;
+//              END;`)
+    let sql = ` SELECT * from image_result 
+                 `;
+                
     
-console.log(result);
+     result = await connection.execute(sql);  
+             console.log(result);
+     let sql2 = `
+     
+     DROP TABLE image_result PURGE 
+     `
+    ;        
+     await connection.execute(sql2)
+             
+    let sql3 = `
+     
+     create table image_result(id number ,image_name varchar2(20)) 
+     `
+      await connection.execute(sql3)
+     let listLivres = []
+    result.rows.forEach(element => {
+        let livresim = {
+            titre: element[1]
+        }
+        listLivres.push(livresim)
+    });
+    console.log(listLivres)
+    res.render('result', {
+        livres: listLivres
+    });
 
 })
 
