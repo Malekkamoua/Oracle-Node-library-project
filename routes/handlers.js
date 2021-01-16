@@ -68,7 +68,7 @@ router.get('/createdb', async (req, res) => {
     const stmts = [
         `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
         `CREATE TABLE image_user (id NUMBER,image ORDImage ,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
-        
+
     ];
 
     for (const s of stmts) {
@@ -150,41 +150,39 @@ router.post("/searchimage", upload.single('file'), async (req, res) => {
 
     console.log(image.originalname)
 
-let result = await connection.execute(
-    `BEGIN
+    let result = await connection.execute(
+        `BEGIN
                load_image(:image);
                
-             END;`,
-             {
-                 image: {
+             END;`, {
+            image: {
                 val: image.originalname,
                 dir: oracledb.BIND_IN,
                 type: oracledb.STRING
             }
-             })
-//    result = await connection.execute(
-//     `BEGIN
-//                check_sim;
-//              END;`)
+        })
+    //    result = await connection.execute(
+    //     `BEGIN
+    //                check_sim;
+    //              END;`)
     let sql = ` SELECT * from image_result 
                  `;
-                
-    
-     result = await connection.execute(sql);  
-             console.log(result);
-     let sql2 = `
+
+
+    result = await connection.execute(sql);
+    console.log(result);
+    let sql2 = `
      
      DROP TABLE image_result PURGE 
-     `
-    ;        
-     await connection.execute(sql2)
-             
+     `;
+    await connection.execute(sql2)
+
     let sql3 = `
      
      create table image_result(id number ,image_name varchar2(20)) 
      `
-      await connection.execute(sql3)
-     let listLivres = []
+    await connection.execute(sql3)
+    let listLivres = []
     result.rows.forEach(element => {
         let livresim = {
             titre: element[1]
