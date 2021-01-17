@@ -7,8 +7,8 @@
   <title>Document</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/slick-carousel/1.9.0/slick.css">
   <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
-  <link rel="stylesheet" href="./style.css">
-  <link rel="stylesheet" href="./ModalStyle.css">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="ModalStyle.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
@@ -21,14 +21,14 @@
 
     <ul class="main__slider main__slider--countries">
 
-      {{#livres}}
+      {{#persons}}
       <li class="main__item">
         <div class="main__image" style="background-image:url('{{imagename}}')">
         </div>
         <h1 class="main__title">{{titre}}</h1>
       </li>
-      {{/livres}}
-      
+      {{/persons}}
+
     </ul>
 
     <p class="main__credit" style="position: absolute; bottom: 0px;">Made by <a
@@ -71,11 +71,11 @@
             <div class="container">
               <div class="card">
                 <div class="card-body">
-                  <form action="/searchimage" method="post">
+                  <form action="/searchimage" method="post" enctype="multipart/form-data">
                     <div class="card-title">Upload your file here</div>
                     <div class="card-subtitle">Maximum file size is 1GB</div>
                     <div class="file-upload">
-                      <input class="file-input" type="file">
+                      <input class="file-input" type="file" name="file">
                       <svg class="icon" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
                         <g id="Page-1" fill="none" fill-rule="evenodd">
                           <g id="135---Upload-File" fill-rule="nonzero">
@@ -133,7 +133,7 @@
                 </div>
               </div>
             </div>
-            <!-- Icons made by Smashicons https://www.flaticon.com/authors/smashicons -->
+
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
@@ -174,7 +174,7 @@
       slidesToShow: 3,
       slidesToScroll: 1,
       arrows: false,
-      initialSlide: 2,
+      initialSlide: 1,
       responsive: [{
         breakpoint: 1000,
         settings: {
@@ -186,4 +186,5 @@
   </script>
 
 </body>
+
 </html>

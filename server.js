@@ -11,6 +11,7 @@ const routes = require('./routes/handlers');
 
 // Sending static files with Express 
 app.use(express.static('images'));
+app.use(express.static('views'));
 //body parser
 app.use(bodyParser.json())
 

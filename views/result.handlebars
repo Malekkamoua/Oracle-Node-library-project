@@ -21,13 +21,23 @@
 
               <ul class="main__slider main__slider--countries">
 
-                     {{#livres}}
                      <li class="main__item">
-                            <div class="main__image" style="background-image:url('{{titre}}')">
+                            <div class="main__image">
                             </div>
-                            <h1 class="main__title">Finland</h1>
+                            <h1 class="main__title"></h1>
                      </li>
-                     {{/livres}}
+                     {{#persons}}
+                     <li class="main__item">
+                            <div class="main__image" style="background-image:url('{{name}}')">
+                            </div>
+                            <h1 class="main__title"></h1>
+                     </li>
+                     {{/persons}}
+                     <li class="main__item">
+                            <div class="main__image">
+                            </div>
+                            <h1 class="main__title"></h1>
+                     </li>
 
               </ul>
 
@@ -85,10 +95,10 @@
               $(".main__slider").slick({
                      centerMode: true,
                      infinite: false,
-                     slidesToShow: 3,
+                     slidesToShow: 1,
                      slidesToScroll: 1,
                      arrows: false,
-                     initialSlide: 2,
+                     initialSlide: 1,
                      responsive: [{
                             breakpoint: 1000,
                             settings: {
@@ -100,4 +110,5 @@
        </script>
 
 </body>
+
 </html>

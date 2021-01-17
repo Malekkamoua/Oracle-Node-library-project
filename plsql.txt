@@ -1,0 +1,115 @@
+add person to the database :
+
+CREATE OR REPLACE PROCEDURE add_person(v_id IN NUMBER,v_name IN VARCHAR2,v_imagename IN VARCHAR2)
+	AS
+	      
+              img ORDImage;
+              ctx RAW(64) := NULL;
+		
+		t_image ORDSYS.ORDImage;
+  		c_image ORDSYS.ORDImage;
+  		image_sig ORDSYS.ORDImageSignature;
+ 		compare_sig ORDSYS.ORDImageSignature;
+ 		score FLOAT;
+
+              BEGIN
+              INSERT
+              INTO person(id,name,image)
+              VALUES (v_id,v_name,ORDImage.init('FILE','DIR_MMDB_UAS',v_imagename)) 
+              returning image
+                  INTO img;
+              img.import(ctx);
+                  UPDATE person SET image = img 
+                  WHERE id =v_id;
+              update person set image_sig=ORDSYS.ORDImageSignature.init()
+                where id=v_id;
+  		SELECT l.image , l.image_sig into t_image,image_sig
+ 		FROM person l
+ 		WHERE l.id = v_id FOR UPDATE;
+ 
+ 		image_sig.generateSignature(t_image);
+ 
+ 		UPDATE person l  SET
+ 		l.image_sig = image_sig
+ 		WHERE l.id = v_id;
+
+                  COMMIT;
+                  END;
+              /
+              ------------------------------------------------------------------------------------
+
+check the similarity of an image with others in the database :
+
+CREATE OR REPLACE PROCEDURE load_image(in_fname IN VARCHAR2)
+AS
+  obj ORDIMAGE;
+  ctx RAW(64) := NULL;
+
+  t_image ORDSYS.ORDImage;
+  c_image ORDSYS.ORDImage;
+  image_sig ORDSYS.ORDImageSignature;
+ compare_sig ORDSYS.ORDImageSignature;
+ score FLOAT;
+
+id              NUMBER;
+ img_score       NUMBER;
+ image_person ORDSYS.ORDImage;
+ image_sig_person ORDSYS.ORDImageSignature;
+ query_signature ORDSYS.ORDImageSignature;
+ name varchar2(20);
+ value     INTEGER;
+
+CURSOR getphotos IS
+ SELECT l.id,l.image_sig,l.name,l.image
+  FROM person l ;
+
+
+  
+
+BEGIN
+  INSERT INTO image_user (id,image) VALUES
+      (1, ORDImage('FILE','DIR_MMDB_UAS', in_fname))
+      RETURNING image INTO obj;
+  obj.import(ctx);
+  UPDATE image_user SET image = obj WHERE id = 1;
+  update image_user set image_sig=ORDSYS.ORDImageSignature.init()
+                where id=1;
+  SELECT u.image , u.image_sig into t_image,image_sig
+ FROM image_user u
+ WHERE u.id = 1 FOR UPDATE;
+ 
+ image_sig.generateSignature(t_image);
+ 
+ UPDATE image_user u  SET
+ u.image_sig = image_sig
+ WHERE u.id = 1;
+
+SELECT u.image_sig INTO query_signature 
+   FROM image_user u
+   WHERE u.id = 1;
+ OPEN getphotos;
+  LOOP
+   FETCH getphotos INTO id,image_sig_person,name,image_person;
+   EXIT WHEN getphotos%NOTFOUND;
+value := ORDSYS.ORDImageSignature.isSimilar(image_sig_person,
+ query_signature,'color=0.2,texture=0.1,shape=0.5,location=0.2',40);
+ IF value = 1 THEN
+   DBMS_OUTPUT.PUT_LINE(name||' The images are similar '||value);
+
+   INSERT INTO image_result(id,image_name) values(id,image_person.getSourceName());
+   DBMS_OUTPUT.PUT_LINE('image saved');
+   	 
+ELSIF value = 0 THEN
+  
+   DBMS_OUTPUT.PUT_LINE(name||' The images are not similar '||value);
+ END IF;
+   
+  END LOOP;
+ CLOSE getphotos;
+ delete from image_user;
+
+ 
+
+  COMMIT;
+END;
+/

@@ -66,9 +66,9 @@ router.get('/createdir', async (req, res) => {
 router.get('/createdb', async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
     const stmts = [
-        `CREATE TABLE livre (id NUMBER, titre varchar2(20),auteur varchar2(20),image ORDImage,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
+        `CREATE TABLE person (id NUMBER, name varchar2(20),image ORDImage,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
         `CREATE TABLE image_user (id NUMBER,image ORDImage ,image_sig ORDSYS.ORDImageSignature) LOB (image.source.localData) store as (chunk 32k)`,
-
+        
     ];
 
     for (const s of stmts) {
@@ -83,55 +83,49 @@ router.get('/createdb', async (req, res) => {
 
 });
 
-router.get('/livres', async (req, res) => {
+router.get('/persons', async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
-    let sql = `SELECT * from livre`;
+    let sql = `SELECT * from person`;
     const result = await connection.execute(sql);
-    let listLivres = []
+    let listpersons = []
     result.rows.forEach(element => {
-        let livre = {
-            titre: element[1],
-            auteur: element[2],
-            imagename: element[3].SOURCE.SRCNAME
+        let person = {
+            name: element[1],
+            imagename: element[2].SOURCE.SRCNAME
         }
-        listLivres.push(livre)
+        listpersons.push(person)
     });
-    console.log(listLivres)
+    console.log(listpersons)
     res.render('index', {
-        livres: listLivres
+        persons: listpersons
     });
 });
 
-router.post('/livres', upload.single('image'), async (req, res) => {
+router.post('/persons', upload.single('image'), async (req, res) => {
     connection = await oracledb.getConnection(dbConfig);
     let result;
-    let sql_1 = `SELECT * from livre`;
+    let sql_1 = `SELECT * from person`;
     result = await connection.execute(sql_1);
 
     let id = result.rows.length + 1;
-    let titre = req.body.titre; //tittre du livre
-    let auteur = req.body.auteur; //nom auteur
+    let name = req.body.name; //tittre du person
+    //let auteur = req.body.auteur; //nom auteur
     let image = req.file; //nom image
-    console.log(id, titre, auteur, image.originalname)
+    //console.log(id, titre, auteur, image.originalname)
 
     result = await connection.execute(
         `BEGIN
-                   add_livre(:id,:titre,:auteur,:image);
+                   add_person(:id,:name,:image);
                  END;`, {
             id: {
                 val: id,
                 dir: oracledb.BIND_IN,
                 type: oracledb.NUMBER
             }, // Bind type is determined from the data.  Default direction is BIND_IN
-            titre: {
-                val: titre,
+            name: {
+                val: name,
                 dir: oracledb.BIND_IN,
                 type: oracledb.STRING
-            },
-            auteur: {
-                type: oracledb.STRING,
-                dir: oracledb.BIND_IN,
-                val: auteur
             },
             image: {
                 type: oracledb.STRING,
@@ -150,48 +144,50 @@ router.post("/searchimage", upload.single('file'), async (req, res) => {
 
     console.log(image.originalname)
 
-    let result = await connection.execute(
-        `BEGIN
+let result = await connection.execute(
+    `BEGIN
                load_image(:image);
                
-             END;`, {
-            image: {
+             END;`,
+             {
+                 image: {
                 val: image.originalname,
                 dir: oracledb.BIND_IN,
                 type: oracledb.STRING
             }
-        })
-    //    result = await connection.execute(
-    //     `BEGIN
-    //                check_sim;
-    //              END;`)
+             })
+//    result = await connection.execute(
+//     `BEGIN
+//                check_sim;
+//              END;`)
     let sql = ` SELECT * from image_result 
                  `;
-
-
-    result = await connection.execute(sql);
-    console.log(result);
-    let sql2 = `
+                
+    
+     result = await connection.execute(sql);  
+             console.log(result);
+     let sql2 = `
      
      DROP TABLE image_result PURGE 
-     `;
-    await connection.execute(sql2)
-
+     `
+    ;        
+     await connection.execute(sql2)
+             
     let sql3 = `
      
      create table image_result(id number ,image_name varchar2(20)) 
      `
-    await connection.execute(sql3)
-    let listLivres = []
+      await connection.execute(sql3)
+     let listpersons = []
     result.rows.forEach(element => {
-        let livresim = {
-            titre: element[1]
+        let personsim = {
+            name: element[1]
         }
-        listLivres.push(livresim)
+        listpersons.push(personsim)
     });
-    console.log(listLivres)
+    console.log(listpersons)
     res.render('result', {
-        livres: listLivres
+        persons: listpersons
     });
 
 })

@@ -94,8 +94,8 @@
 }
 
 .main__image {
-  width: 680px;
-  height: 800px;
+  width: 500px;
+  height: 500px;
   transform: scale(0.5);
   transition: transform 0.5s;
   transition-delay: 0.1s;
